@@ -1,11 +1,8 @@
 import "./App.css";
 import React, { useEffect, useState } from "react";
-//import checkbox from "../src/components/checkbox";
 
 function App() {
-  const [initialState, setInitialState] = useState([]); //The useState manages a local array state, state.
   const [state, setState] = useState([]); //The useState manages a local array state, state.
-  const selectedFilters = []; //checkbox filters
   const categoryFilters = [];
   //The useEffect will make a network request on component render.
   useEffect(() => {
@@ -13,75 +10,79 @@ function App() {
       .then((res) => res.json())
       .then((json) => {
         json.map((item) => {
-          //console.log(item.category);
+          // get unique categories for filters
           if (categoryFilters.indexOf(item.category) === -1) {
             categoryFilters.push(item.category);
           }
-          return true;
-        });
-        //setInitialState as an object
-        setInitialState({
-          items: json,
-          filters: categoryFilters,
+          return categoryFilters;
         });
         setState({
-          items: initialState.items,
+          initial: {
+            //setInitialState as an object
+            items: json, //initial items
+            filters: categoryFilters,
+          },
+          items: json,
           filters: [],
         });
-        //console.log("CategoryFilters", categoryFilters);
       })
       .catch();
-  }, [state]); //dependancy
+  }, []); //dependancy
 
   const handleChange = (filter) => {
+    // set filters to the filters we have in our state
+    var selectedFilters = state.filters;
+    // remove or add filters
     var index = selectedFilters.indexOf(filter);
     if (index === -1) {
       selectedFilters.push(filter);
-      console.log("Selected Filters", index, selectedFilters);
-    }
-    if (index !== -1) {
-      selectedFilters.splice(index, 1);
-      console.log("Selected Filters", index, selectedFilters);
-    }
-    let filteredItems = initialState.items.filter((item) => {
-      //console.log(selectedFilters.indexOf(item.category));
-      return selectedFilters.indexOf(item.category) !== -1;
-    });
-
-    setState({
-      items: filteredItems,
-      filters: selectedFilters,
-    });
-    /*
-    let filteredItems = state.initialItems.filter(
-      (item) => filters.indexOf(item.category) !== -1
-    );
-    console.log(filteredItems);
-
-    if (filters.length > 0) {
-      setState({ ...state, items: filteredItems });
     } else {
-      setState({ ...state, items: state.initialItems });
+      selectedFilters.splice(index, 1);
     }
-    //console.log(filter);*/
+
+    var filteredItems = [];
+    // if there are no filters, return all the products
+    if (selectedFilters.length == 0) {
+      filteredItems = state.initial.items;
+    } else {
+      // filter products array based on our filters array
+      filteredItems = state.initial.items.filter(function (item) {
+        //looping through item
+        //filter returns new array
+        return this.indexOf(item.category) !== -1; //filter = to boolean check
+      }, selectedFilters);
+    }
+    // set state to show new products based on selected filters
+    setState({ ...state, items: filteredItems, filters: selectedFilters });
   };
 
   return (
     <div className="App">
-      <h2>How to get multiple selected checkbox values</h2>
+      <h2>Simon's Product page of filtering filters that filters products</h2>
       <h4>React js tutorials</h4>
 
-      <div className="filters">
-        {initialState.filters &&
-          initialState.filters.map((filter, index) => {
-            //console.log(filter);
-            return (
-              <div key={index}>
-                <label>{filter}</label>
-                <input type="checkbox" onChange={() => handleChange(filter)} />
-              </div>
-            );
-          })}
+      <div className="header">
+        <div className="filters">
+          {state.initial &&
+            state.initial.filters &&
+            state.initial.filters.map((filter, index) => {
+              //console.log(filter);
+              return (
+                <div key={index}>
+                  <input
+                    type="checkbox"
+                    onChange={() => handleChange(filter)}
+                  />
+                  <label>{filter}</label>
+                </div>
+              );
+            })}
+        </div>
+        {state.items && state.initial.items && (
+          <div className="range">
+            Showing: {state.items.length} of {state.initial.items.length}
+          </div>
+        )}
       </div>
 
       <hr />
@@ -89,7 +90,17 @@ function App() {
       <div className="products">
         {state.items &&
           state.items.map((item) => {
-            return <div key={item.id}>{item.price}</div>;
+            return (
+              <div key={item.id}>
+                <h4>{item.category}</h4>
+                <div className="image-holder">
+                  <img src={item.image} />
+                </div>
+                <h3>{item.title.substr(0, 30) + "..."}</h3>
+                <p>{item.description.substr(0, 100) + "..."}</p>
+                <strong>${item.price}</strong>
+              </div>
+            );
           })}
       </div>
     </div>
